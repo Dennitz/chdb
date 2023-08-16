@@ -37,7 +37,7 @@ jobs:
           sudo ./llvm.sh 15
           which clang++-15
           clang++-15 --version
-          sudo apt-get install -y make cmake ccache ninja-build yasm gawk wget
+          sudo apt-get install -y make cmake ccache ninja-build yasm gawk wget nasm lsb-release software-properties-common gnupg
           ccache -s
       - name: Update git
         run: |
