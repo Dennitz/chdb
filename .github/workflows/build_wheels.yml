@@ -165,7 +165,7 @@ jobs:
           uname -a
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
           brew update
-          brew install git ccache ninja libtool gettext llvm@15 gcc binutils grep findutils zstd
+          brew install git ccache ninja libtool gettext llvm@15 gcc binutils grep findutils zstd nasm
           export PATH=$(brew --prefix llvm@15)/bin:$PATH
           which clang++
           clang++ --version
@@ -280,7 +280,7 @@ jobs:
           uname -a
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
           brew update
-          brew install git ccache ninja libtool gettext llvm@15 gcc binutils grep findutils zstd
+          brew install git ccache ninja libtool gettext llvm@15 gcc binutils grep findutils zstd nasm
           export PATH=$(brew --prefix llvm@15)/bin:$PATH
           which clang++
           clang++ --version
