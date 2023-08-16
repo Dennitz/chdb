@@ -118,15 +118,15 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: ./dist/*.whl
-      - name: Upload pypi
-        if: ${{ startsWith(github.ref, 'refs/tags/v') || startsWIth(github.event.inputs.TAG_NAME, 'v') }}
-        run: |
-          pyenv local "${{ matrix.python-version }}"
-          python3 -m pip install twine
-          python3 -m twine upload ./dist/*.whl
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      #- name: Upload pypi
+        #if: ${{ startsWith(github.ref, 'refs/tags/v') || startsWIth(github.event.inputs.TAG_NAME, 'v') }}
+        #run: |
+          #pyenv local "${{ matrix.python-version }}"
+          #python3 -m pip install twine
+          #python3 -m twine upload ./dist/*.whl
+        #env:
+          #TWINE_USERNAME: __token__
+          #TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       
   # #build for macos12 arm64(Apple Silicon)
   # build_wheels_macos_arm64:
