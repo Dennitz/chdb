@@ -17,7 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-20.04 ]
-        python-version: [ "3.11"]
+        python-version: []
+#        python-version: [ "3.11"]
         #python-version: [ "3.8", "3.9", "3.10", "3.11"]
         # python-version: [ "3.7" ]
     env:
@@ -204,7 +205,7 @@ jobs:
         timeout-minutes: 300
         run: |
           python3 -m pip install pybind11
-          export PATH=$(brew --prefix llvm@15)/bin:/usr/local/opt/grep/libexec/gnubin:/usr/local/opt/binutils/bin:$PATH:/usr/local/opt/findutils/libexec/gnubin
+          export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
           export CC=$(brew --prefix llvm@15)/bin/clang
           export CXX=$(brew --prefix llvm@15)/bin/clang++
           bash gen_manifest.sh
@@ -269,7 +270,8 @@ jobs:
       matrix:
         os: [ macos-11 ]
         # python-version: [ "3.8", "3.9", "3.10"]
-        python-version: [ "3.11" ]
+#        python-version: [ "3.11" ]
+        python-version: []
     env:
       RUNNER_OS: ${{ matrix.os }}
       PYTHON_VERSION: ${{ matrix.python-version }}
