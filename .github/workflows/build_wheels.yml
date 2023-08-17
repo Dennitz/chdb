@@ -202,7 +202,7 @@ jobs:
           max-size: 5G
           append-timestamp: true
       - name: Run chdb/build.sh
-        timeout-minutes: 300
+        timeout-minutes: 1000
         run: |
           python3 -m pip install pybind11
           export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
@@ -331,7 +331,7 @@ jobs:
 #          python3 -m pip install cibuildwheel==2.12.1
 #      - name: Build wheels
 #        run: python3 -m cibuildwheel --output-dir wheelhouse
-#        timeout-minutes: 300
+#        timeout-minutes: 1000
 #        env:
 #          CIBW_ENVIRONMENT_MACOS: "PATH=$(brew --prefix llvm@15)/bin:/usr/local/opt/grep/libexec/gnubin:/usr/local/opt/binutils/bin:$PATH:/usr/local/opt/findutils/libexec/gnubin CC=$(brew --prefix llvm@15)/bin/clang CXX=$(brew --prefix llvm@15)/bin/clang++"
 #          CIBW_DEBUG: 1
