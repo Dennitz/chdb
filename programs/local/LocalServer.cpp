@@ -1044,6 +1044,7 @@ std::unique_ptr<query_result_> pyEntryClickHouseLocal(int argc, char ** argv)
             result->rows = app.getProcessedRows();
             result->bytes = app.getProcessedBytes();
             result->elapsed = app.getElapsedTime();
+            res->error_message = nullptr;
 
             // std::cerr << std::string(out->begin(), out->end()) << std::endl;
             return result;
@@ -1071,24 +1072,55 @@ std::unique_ptr<query_result_> pyEntryClickHouseLocal(int argc, char ** argv)
 // todo fix the memory leak and unnecessary copy
 local_result * query_stable(int argc, char ** argv)
 {
-    auto result = pyEntryClickHouseLocal(argc, argv);
-    if (!result || !result->buf)
+    try
     {
-        return nullptr;
+        std::vector<char> * result = pyEntryClickHouseLocal(argc, argv);
+        if (!result || !result->buf)
+        {
+            return nullptr;
+        }
+        local_result * res = new local_result;
+        res->len = result->buf->size();
+        res->buf = result->buf->data();
+        res->_vec = result->buf;
+        res->error_message = nullptr;
+        return res;
+    } catch (const DB::Exception & e) {
+        local_result * res = new local_result;
+        res->len = 0;
+        res->buf = nullptr;
+        res->_vec = nullptr;
+        res->error_message = strdup(DB::getExceptionMessage(e, false).c_str());
+        return res;
     }
-    local_result * res = new local_result;
-    res->len = result->buf->size();
-    res->buf = result->buf->data();
-    res->_vec = result->buf;
-    res->rows_read = result->rows;
-    res->bytes_read = result->bytes;
-    res->elapsed = result->elapsed;
-    return res;
+    catch (const boost::program_options::error & e) {
+        local_result * res = new local_result;
+        res->len = 0;
+        res->buf = nullptr;
+        res->_vec = nullptr;
+        res->error_message = strdup(("Bad arguments: " + std::string(e.what())).c_str());
+        return res;
+    }
+    catch (...) {
+        local_result * res = new local_result;
+        res->len = 0;
+        res->buf = nullptr;
+        res->_vec = nullptr;
+        res->error_message = strdup(DB::getCurrentExceptionMessage(true).c_str());
+        return res;
+    }
 }
 
 void free_result(local_result * result)
 {
-    if (!result || !result->_vec)
+    if (!result)
+    {
+        return;
+    }
+
+    result->error_message = nullptr;
+
+    if (!result->_vec)
     {
         return;
     }
