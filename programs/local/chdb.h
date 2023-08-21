@@ -11,7 +11,7 @@ struct local_result
     double elapsed;
     uint64_t rows_read;
     uint64_t bytes_read;
-    const char* error_message;
+    char * error_message;
 };
 
 local_result * query_stable(int argc, char ** argv);
