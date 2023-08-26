@@ -102,20 +102,12 @@ ninja -v > build.log
 
 # extract the command to generate CHDB_PY_MODULE
 
-#LIBCHDB_CMD=$(grep 'clang++.*-o programs/clickhouse .*' build.log \
-#    | sed "s/-o programs\/clickhouse/-fPIC -shared  -o ${CHDB_PY_MODULE}/" \
-#    | sed 's/^[^&]*&& //' | sed 's/&&.*//' \
-#    | sed 's/ -Wl,-undefined,error/ -Wl,-undefined,dynamic_lookup/g' \
-#    | sed 's/ -Xlinker --no-undefined//g' \
-#     )
-
-
-# Extract all object files from the build.log
-OBJECT_FILES=$(grep 'clang++.*-o programs/clickhouse .*' build.log | sed -n 's/^.*clang++[^ ]* //; s/-o programs\/clickhouse//p' | tr -s ' ' '\n' | grep "\.o")
-
-# Now construct the command to create the static library
-LIBCHDB_CMD="ar rcs ${CHDB_DIR}/${CHDB_PY_MODULE} $OBJECT_FILES"
-
+LIBCHDB_CMD=$(grep 'clang++.*-o programs/clickhouse .*' build.log \
+    | sed "s/-o programs\/clickhouse/-fPIC -shared  -o ${CHDB_PY_MODULE}/" \
+    | sed 's/^[^&]*&& //' | sed 's/&&.*//' \
+    | sed 's/ -Wl,-undefined,error/ -Wl,-undefined,dynamic_lookup/g' \
+    | sed 's/ -Xlinker --no-undefined//g' \
+     )
 
 if [ "$(uname)" == "Linux" ]; then
     # remove src/CMakeFiles/clickhouse_malloc.dir/Common/stubFree.c.o
@@ -129,22 +121,21 @@ echo ${LIBCHDB_CMD} > libchdb_cmd.sh
 
 ${LIBCHDB_CMD}
 
-#LIBCHDB_DIR=${BUILD_DIR}
-LIBCHDB=${CHDB_DIR}/${CHDB_PY_MODULE}
+LIBCHDB_DIR=${BUILD_DIR}/
+LIBCHDB=${LIBCHDB_DIR}/${CHDB_PY_MODULE}
 echo -e "\nLIBCHDB: ${LIBCHDB}"
-ls -lh "${LIBCHDB}"
+ls -lh ${LIBCHDB}
 echo -e "\nldd ${LIBCHDB}"
-${LDD} "${LIBCHDB}"
+${LDD} ${LIBCHDB}
 echo -e "\nfile info of ${LIBCHDB}"
-file "${LIBCHDB}"
+file ${LIBCHDB}
 
-#rm -f ${CHDB_DIR}/*.so
-#mv ${LIBCHDB} ${CHDB_DIR}/${CHDB_PY_MODULE}
-#cp ${LIBCHDB} ${CHDB_DIR}/${CHDB_PY_MODULE}
-#strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
+rm -f ${CHDB_DIR}/*.so
+mv ${LIBCHDB} ${CHDB_DIR}/${CHDB_PY_MODULE}
+strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
 
 # strip the binary (no debug info at all)
-#strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
+strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
 # echo -e "\nAfter strip:"
 # echo -e "\nLIBCHDB: ${LIBCHDB}"
 # ls -lh ${CHDB_DIR}
