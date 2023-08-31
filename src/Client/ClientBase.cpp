@@ -636,10 +636,8 @@ try
             {
                 if (has_vertical_output_suffix)
                     throw Exception(ErrorCodes::CLIENT_OUTPUT_FORMAT_SPECIFIED, "Output format already specified");
-                // Dennis: By commenting this out, we ignore output formats specified in the query itself.
-                //   This way it won't be possible for user-defined queries to override our expected output format.
-//                const auto & id = query_with_output->format->as<ASTIdentifier &>();
-//                current_format = id.name();
+                const auto & id = query_with_output->format->as<ASTIdentifier &>();
+                current_format = id.name();
             }
             else if (query_with_output->out_file)
             {
