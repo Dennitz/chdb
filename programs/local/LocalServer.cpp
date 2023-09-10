@@ -1073,6 +1073,13 @@ void LocalServer::free_result(chdb_local_result * result)
 
     delete result;
 }
+
+void LocalServer::set_named_collections(char * named_collection_config_xml)
+{
+    ConfigurationPtr named_collection_config = getConfigurationFromXMLString(named_collection_config_xml);
+    NamedCollectionUtils::reloadFromConfig(*named_collection_config);
+}
+
 }
 
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -1253,6 +1260,12 @@ chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * form
         res->error_message = strdup(DB::getCurrentExceptionMessage(true).c_str());
         return res;
     }
+}
+
+void chdb_set_named_collections(ChdbLocalServerPtr obj, char * named_collection_config_xml)
+{
+    DB::LocalServer* app = static_cast<DB::LocalServer*>(obj);
+    app->set_named_collections(named_collection_config_xml);
 }
 
 // todo fix the memory leak and unnecessary copy

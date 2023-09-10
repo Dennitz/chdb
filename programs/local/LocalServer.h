@@ -40,6 +40,7 @@ public:
         ClientBase::uninitialize();
     }
 
+    void set_named_collections(char * named_collection_config_xml);
 protected:
     void connect() override;
 
