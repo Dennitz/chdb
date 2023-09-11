@@ -839,10 +839,10 @@ void LocalServer::processConfig()
             // This should be fixed in the future. But it seems chdb do not nedd background tasks which
             // will do some drop table cleanup issues. So we just disable it for now.
             // before the global thread pool is destroyed.
-             DatabaseCatalog::instance().createBackgroundTasks();
+//             DatabaseCatalog::instance().createBackgroundTasks();
             loadMetadata(global_context);
             // loadMetadata(global_context, default_database);
-             DatabaseCatalog::instance().startupBackgroundCleanup();
+//             DatabaseCatalog::instance().startupBackgroundCleanup();
         }
 
         /// For ClickHouse local if path is not set the loader will be disabled.
