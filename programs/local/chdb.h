@@ -22,7 +22,7 @@ struct chdb_init_result
    char * error_message;
 };
 
-chdb_init_result * chdb_connect(int argc, char ** argv);
+chdb_init_result * chdb_connect(int argc, char ** argv, char * named_collection_config_xml);
 void chdb_disconnect(ChdbLocalServerPtr obj);
 chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * format);
 void chdb_free_result(ChdbLocalServerPtr obj, chdb_local_result * result);

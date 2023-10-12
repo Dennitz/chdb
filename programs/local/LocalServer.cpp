@@ -1160,12 +1160,13 @@ std::unique_ptr<query_result_> pyEntryClickHouseLocal(int argc, char ** argv)
     }
 }
 
-chdb_init_result * chdb_connect(int argc, char ** argv)
+chdb_init_result * chdb_connect(int argc, char ** argv, char * named_collection_config_xml)
 {
     try
     {
         DB::LocalServer* app = new DB::LocalServer();
         app->init(argc, argv);
+        app->set_named_collections(named_collection_config_xml);
         // Note: app.run() does more startup setup but doesn't run any user-provided query
         app->run();
 
