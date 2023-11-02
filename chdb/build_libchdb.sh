@@ -14,23 +14,17 @@ if [ "$(uname)" == "Darwin" ]; then
     UNWIND="-DUSE_UNWIND=0"
     JEMALLOC="-DENABLE_JEMALLOC=0"
     PYINIT_ENTRY="-Wl,-exported_symbol,_PyInit_${CHDB_PY_MOD}"
+
+    export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
+    export CC=$(brew --prefix llvm@15)/bin/clang
+    export CXX=$(brew --prefix llvm@15)/bin/clang++
     # if Darwin ARM64 (M1, M2), disable AVX
     if [ "$(uname -m)" == "arm64" ]; then
         CMAKE_TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=cmake/darwin/toolchain-aarch64.cmake"
         CPU_FEATURES="-DENABLE_AVX=0 -DENABLE_AVX2=0"
         EMBEDDED_COMPILER="-DENABLE_EMBEDDED_COMPILER=0"
-#        export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
-#        export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$(brew --prefix)/opt/protobuf/bin:$(brew --prefix)/opt/findutils/libexec/gnubin:$PATH
-        export PATH=$(brew --prefix llvm@15)/bin:$PATH
-        export CC=$(brew --prefix llvm@15)/bin/clang
-        export CXX=$(brew --prefix llvm@15)/bin/clang++
     else
-        # export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
-        export PATH=$(brew --prefix llvm@15)/bin:$PATH
-        export CC=$(brew --prefix llvm@15)/bin/clang
-        export CXX=$(brew --prefix llvm@15)/bin/clang++
-        echo "USING CC: ${CC}"
-        EMBEDDED_COMPILER="-DENABLE_EMBEDDED_COMPILER=0"
+        EMBEDDED_COMPILER="-DENABLE_EMBEDDED_COMPILER=1"
         # disable AVX on Darwin for macos11
         if [ "$(sw_vers -productVersion | cut -d. -f1)" -le 11 ]; then
             CPU_FEATURES="-DENABLE_AVX=0 -DENABLE_AVX2=0"
@@ -109,7 +103,7 @@ ninja -v > build.log
 # extract the command to generate CHDB_PY_MODULE
 
 LIBCHDB_CMD=$(grep 'clang++.*-o programs/clickhouse .*' build.log \
-    | sed "s/-o programs\/clickhouse/-fPIC -shared  -o ${CHDB_PY_MODULE}/" \
+    | sed "s/-o programs\/clickhouse/-fPIC -shared -install_name @loader_path\/libchdb.so -o ${CHDB_PY_MODULE}/" \
     | sed 's/^[^&]*&& //' | sed 's/&&.*//' \
     | sed 's/ -Wl,-undefined,error/ -Wl,-undefined,dynamic_lookup/g' \
     | sed 's/ -Xlinker --no-undefined//g' \
@@ -138,10 +132,10 @@ file ${LIBCHDB}
 
 rm -f ${CHDB_DIR}/*.so
 mv ${LIBCHDB} ${CHDB_DIR}/${CHDB_PY_MODULE}
-strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
+# strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
 
 # strip the binary (no debug info at all)
-strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
+# strip ${CHDB_DIR}/${CHDB_PY_MODULE} || true
 # echo -e "\nAfter strip:"
 # echo -e "\nLIBCHDB: ${LIBCHDB}"
 # ls -lh ${CHDB_DIR}
