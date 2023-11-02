@@ -21,16 +21,10 @@ if [ "$(uname)" == "Darwin" ]; then
         EMBEDDED_COMPILER="-DENABLE_EMBEDDED_COMPILER=0"
 #        export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
 #        export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$(brew --prefix)/opt/protobuf/bin:$(brew --prefix)/opt/findutils/libexec/gnubin:$PATH
-        export PATH=$(brew --prefix llvm@15)/bin:$PATH
         export CC=$(brew --prefix llvm@15)/bin/clang
         export CXX=$(brew --prefix llvm@15)/bin/clang++
     else
-        # export PATH=$(brew --prefix llvm@15)/bin:$(brew --prefix)/opt/grep/libexec/gnubin:$(brew --prefix)/opt/binutils/bin:$PATH:$(brew --prefix)/opt/findutils/libexec/gnubin
-        export PATH=$(brew --prefix llvm@15)/bin:$PATH
-        export CC=$(brew --prefix llvm@15)/bin/clang
-        export CXX=$(brew --prefix llvm@15)/bin/clang++
-        echo "USING CC: ${CC}"
-        EMBEDDED_COMPILER="-DENABLE_EMBEDDED_COMPILER=0"
+        EMBEDDED_COMPILER="-DENABLE_EMBEDDED_COMPILER=1"
         # disable AVX on Darwin for macos11
         if [ "$(sw_vers -productVersion | cut -d. -f1)" -le 11 ]; then
             CPU_FEATURES="-DENABLE_AVX=0 -DENABLE_AVX2=0"

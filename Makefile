@@ -31,17 +31,17 @@ mac-arm64:
 
 libchdb-mac-arm64:
 	@echo "Make macOS arm64 libchdb.so"
-	chdb/build_libchdb_mac.sh
+	chdb/build_libchdb_mac_arm64.sh
 	@echo "Done."
 
 libchdb-mac-x86:
 	@echo "Make macOS x86 libchdb.so"
-	arch -x86_64 ./chdb/build_libchdb_mac.sh
+	arch -x86_64 ./chdb/build_libchdb_mac_arm64.sh
 	@echo "Done."
 
 libchdb-mac-x86-native:
 	@echo "Make macOS x86 libchdb.so"
-	./chdb/build_libchdb_mac.sh
+	./chdb/build_libchdb_mac_arm64.sh
 	@echo "Done."
 
 linux-arm64:
