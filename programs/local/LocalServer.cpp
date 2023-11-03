@@ -143,28 +143,28 @@ void LocalServer::processError(const String &) const
     if (ignore_error)
         return;
 
-    if (is_interactive)
+    // if (is_interactive)
+    // {
+    if (server_exception)
     {
-        String message;
-        if (server_exception)
-        {
-            message = getExceptionMessage(*server_exception, print_stack_trace, true);
-        }
-        else if (client_exception)
-        {
-            message = client_exception->message();
-        }
+        error_message =  strdup(getExceptionMessage(*server_exception, print_stack_trace, true).c_str());
+    }
+    else if (client_exception)
+    {
+        error_message = strdup(client_exception->message().c_str());
+    }
 
-        fmt::print(stderr, "Received exception:\n{}\n", message);
-        fmt::print(stderr, "\n");
-    }
-    else
-    {
-        if (server_exception)
-            server_exception->rethrow();
-        if (client_exception)
-            client_exception->rethrow();
-    }
+    //     fmt::print(stderr, "Received exception:\n{}\n", message);
+    //     fmt::print(stderr, "\n");
+    // }
+    // else
+    // {
+    //     if (server_exception)
+    //         server_exception->rethrow();
+    //     if (client_exception) {
+    //         client_exception->rethrow();
+    //     }
+    // }
 }
 
 
@@ -531,12 +531,12 @@ int LocalServer::main(const std::vector<std::string> & /*args*/)
         && (config().hasOption("interactive")
             || (queries.empty() && !config().has("table-structure") && queries_files.empty() && !config().has("table-file")));
 #endif
-    if (!is_interactive)
-    {
-        /// We will terminate process on error
-        static KillingErrorHandler error_handler;
-        Poco::ErrorHandler::set(&error_handler);
-    }
+    // if (!is_interactive)
+    // {
+    //     /// We will terminate process on error
+    //     static KillingErrorHandler error_handler;
+    //     Poco::ErrorHandler::set(&error_handler);
+    // }
 
         // run only once
         static std::once_flag register_once_flag;
@@ -1036,42 +1036,98 @@ void LocalServer::readArguments(int argc, char ** argv, Arguments & common_argum
 }
 
 
-std::vector<char> * LocalServer::run_chdb_query(char * query, char * query_format) {
+void LocalServer::reconnect_if_needed() {
+    if (client_exception)
+    {
+        /// client_exception may have been set above or elsewhere.
+        /// Client-side exception during query execution can result in the loss of
+        /// sync in the connection protocol.
+        /// So we reconnect and allow to enter the next query.
+        if (!connection->checkConnected(connection_parameters.timeouts))
+            connect();
+    }
+}
+
+chdb_local_result * make_error_result(char * msg) {
+    chdb_local_result * res = new chdb_local_result;
+    res->len = 0;
+    res->buf = nullptr;
+    res->error_message = msg;
+    return res;
+}
+
+chdb_local_result * LocalServer::run_chdb_query(char * query, char * query_format) {
     std::string formatText(query_format);
     format = formatText;
 
     std::string queryText(query);
 
-    bool success = processQueryText(queryText);
+    try {
+        bool success = processQueryText(queryText);
+        std::vector<char> * result_buf = getQueryOutputVector();
+        reconnect_if_needed();
 
-    if (success)
-    {
-        auto buf = getQueryOutputVector();
-        return buf;
-    } else
-    {
-        return nullptr;
+        if (error_message) {
+            if (query_result_memory) {
+                delete query_result_memory;
+                query_result_memory = nullptr;
+            }
+            return make_error_result(error_message);
+        }
+
+        if (!result_buf) {
+            if (query_result_memory) {
+                delete query_result_memory;
+                query_result_memory = nullptr;
+            }
+            return nullptr;
+        }
+
+
+        if (success)
+        {
+            chdb_local_result * res = new chdb_local_result;
+            res->len = result_buf->size();
+            res->buf = result_buf->data();
+            res->error_message = nullptr;
+            return res;
+        } else
+        {
+            if (query_result_memory) {
+                delete query_result_memory;
+                query_result_memory = nullptr;
+            }
+            return nullptr;
+        }
+    } catch (const DB::Exception & e) {
+        reconnect_if_needed();
+        return make_error_result(strdup(DB::getExceptionMessage(e, false).c_str()));
     }
-
+    catch (const boost::program_options::error & e) {
+        reconnect_if_needed();
+        return make_error_result(strdup(("Bad arguments: " + std::string(e.what())).c_str()));
+    }
+    catch (...) {
+        reconnect_if_needed();
+        return make_error_result(strdup(DB::getCurrentExceptionMessage(true).c_str()));
+    }
 }
 
 void LocalServer::free_result(chdb_local_result * result)
 {
-    if (!result) {
-        return;
-    }
-
-    if (result->error_message) {
-        free(result->error_message);
-        result->error_message = nullptr;
-    }
-
     if (query_result_memory) {
         delete query_result_memory;
         query_result_memory = nullptr;
     }
 
-    delete result;
+    if (error_message) {
+        free(error_message);
+        error_message = nullptr;
+    }
+
+    if (result) {
+        delete result;
+    }
 }
 
 void LocalServer::set_named_collections(char * named_collection_config_xml)
@@ -1204,63 +1260,8 @@ void chdb_disconnect(ChdbLocalServerPtr obj) {
 
 chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * format)
 {
-    try
-    {
-        // Backup the original std::cerr buffer
-        std::streambuf* originalCerrBuffer = std::cerr.rdbuf();
-        std::ostringstream capturedErrorOutput;  // This will capture the error output
-        // Redirect the std::cerr to your own buffer
-        std::cerr.rdbuf(capturedErrorOutput.rdbuf());
-
-        DB::LocalServer* app = static_cast<DB::LocalServer*>(obj);
-
-        // Run query
-        std::vector<char> * result = app->run_chdb_query(query, format);
-
-        std::string errorMsg = capturedErrorOutput.str();
-        // Reset std::cerr back to its original state
-        std::cerr.rdbuf(originalCerrBuffer);
-
-        // Check for error on stderr, return it if there is one
-        if (!errorMsg.empty())
-        {
-            chdb_local_result * res = new chdb_local_result;
-            res->len = 0;
-            res->buf = nullptr;
-            res->error_message = strdup(errorMsg.c_str());
-            return res;
-        }
-
-        if (!result) {
-            return nullptr;
-        }
-
-        chdb_local_result * res = new chdb_local_result;
-        res->len = result->size();
-        res->buf = result->data();
-        res->error_message = nullptr;
-        return res;
-    } catch (const DB::Exception & e) {
-        chdb_local_result * res = new chdb_local_result;
-        res->len = 0;
-        res->buf = nullptr;
-        res->error_message = strdup(DB::getExceptionMessage(e, false).c_str());
-        return res;
-    }
-    catch (const boost::program_options::error & e) {
-        chdb_local_result * res = new chdb_local_result;
-        res->len = 0;
-        res->buf = nullptr;
-        res->error_message = strdup(("Bad arguments: " + std::string(e.what())).c_str());
-        return res;
-    }
-    catch (...) {
-        chdb_local_result * res = new chdb_local_result;
-        res->len = 0;
-        res->buf = nullptr;
-        res->error_message = strdup(DB::getCurrentExceptionMessage(true).c_str());
-        return res;
-    }
+    DB::LocalServer* app = static_cast<DB::LocalServer*>(obj);
+    return app->run_chdb_query(query, format);
 }
 
 void chdb_set_named_collections(ChdbLocalServerPtr obj, char * named_collection_config_xml)

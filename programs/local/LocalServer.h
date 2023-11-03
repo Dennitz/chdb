@@ -32,7 +32,7 @@ public:
 
     void cleanup();
 
-    std::vector<char> * run_chdb_query(char * query, char * format);
+    chdb_local_result * run_chdb_query(char * query, char * format);
 
     void free_result(chdb_local_result * result);
 
@@ -42,6 +42,8 @@ public:
 
     void set_named_collections(char * named_collection_config_xml);
 protected:
+    mutable char * error_message;
+
     void connect() override;
 
     void processError(const String & query) const override;
@@ -82,5 +84,7 @@ private:
 
     std::optional<StatusFile> status;
     std::optional<std::filesystem::path> temporary_directory_to_delete;
+
+    void reconnect_if_needed();
 };
 }
