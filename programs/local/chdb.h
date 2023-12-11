@@ -9,7 +9,6 @@ struct chdb_local_result
 {
     char * buf;
     size_t len;
-    void * _vec; // std::vector<char> *, for freeing
     double elapsed;
     uint64_t rows_read;
     uint64_t bytes_read;

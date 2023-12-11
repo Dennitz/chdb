@@ -1052,6 +1052,9 @@ chdb_local_result * make_error_result(char * msg) {
     chdb_local_result * res = new chdb_local_result;
     res->len = 0;
     res->buf = nullptr;
+    res->rows_read = 0;
+    res->bytes_read = 0;
+    res->elapsed = 0.0;
     res->error_message = msg;
     return res;
 }
@@ -1089,6 +1092,9 @@ chdb_local_result * LocalServer::run_chdb_query(char * query, char * query_forma
             chdb_local_result * res = new chdb_local_result;
             res->len = result_buf->size();
             res->buf = result_buf->data();
+            res->rows_read = getProcessedRows();
+            res->bytes_read = getProcessedBytes();
+            res->elapsed = getElapsedTime();
             res->error_message = nullptr;
             return res;
         } else
@@ -1191,7 +1197,6 @@ std::unique_ptr<query_result_> pyEntryClickHouseLocal(int argc, char ** argv)
             result->rows = app.getProcessedRows();
             result->bytes = app.getProcessedBytes();
             result->elapsed = app.getElapsedTime();
-            res->error_message = nullptr;
 
             // std::cerr << std::string(out->begin(), out->end()) << std::endl;
             return result;
@@ -1268,66 +1273,6 @@ void chdb_set_named_collections(ChdbLocalServerPtr obj, char * named_collection_
 {
     DB::LocalServer* app = static_cast<DB::LocalServer*>(obj);
     app->set_named_collections(named_collection_config_xml);
-}
-
-// todo fix the memory leak and unnecessary copy
-chdb_local_result * query_stable(int argc, char ** argv)
-{
-    try
-    {
-        // Backup the original std::cerr buffer
-        std::streambuf* originalCerrBuffer = std::cerr.rdbuf();
-        std::ostringstream capturedErrorOutput;  // This will capture the error output
-        // Redirect the std::cerr to your own buffer
-        std::cerr.rdbuf(capturedErrorOutput.rdbuf());
-
-        // Run query
-        std::vector<char> * result = pyEntryClickHouseLocal(argc, argv);
-
-        // Reset std::cerr back to its original state
-        std::cerr.rdbuf(originalCerrBuffer);
-
-        if (!result || !result->buf)
-        {
-            std::string errorMsg = capturedErrorOutput.str();
-            if (!errorMsg.empty())  // If there is a captured error message
-            {
-                chdb_local_result * res = new chdb_local_result;
-                res->len = 0;
-                res->buf = nullptr;
-                res->error_message = strdup(errorMsg.c_str());
-                return res;
-            }
-
-            return nullptr;
-        }
-        chdb_local_result * res = new chdb_local_result;
-        res->len = result->buf->size();
-        res->buf = result->buf->data();
-        res->_vec = result->buf;
-        res->error_message = nullptr;
-        return res;
-    } catch (const DB::Exception & e) {
-        chdb_local_result * res = new chdb_local_result;
-        res->len = 0;
-        res->buf = nullptr;
-        res->error_message = strdup(DB::getExceptionMessage(e, false).c_str());
-        return res;
-    }
-    catch (const boost::program_options::error & e) {
-        chdb_local_result * res = new chdb_local_result;
-        res->len = 0;
-        res->buf = nullptr;
-        res->error_message = strdup(("Bad arguments: " + std::string(e.what())).c_str());
-        return res;
-    }
-    catch (...) {
-        chdb_local_result * res = new chdb_local_result;
-        res->len = 0;
-        res->buf = nullptr;
-        res->error_message = strdup(DB::getCurrentExceptionMessage(true).c_str());
-        return res;
-    }
 }
 
 void chdb_free_result(ChdbLocalServerPtr obj, chdb_local_result * result)
