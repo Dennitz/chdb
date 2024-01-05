@@ -23,7 +23,7 @@ struct chdb_init_result
 
 chdb_init_result * chdb_connect(int argc, char ** argv, char * named_collection_config_xml);
 void chdb_disconnect(ChdbLocalServerPtr obj);
-chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * format);
+chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * format, bool multiquery);
 void chdb_free_result(ChdbLocalServerPtr obj, chdb_local_result * result);
 void chdb_set_named_collections(ChdbLocalServerPtr obj, char * named_collection_config_xml);
 }

@@ -32,7 +32,7 @@ public:
 
     void cleanup();
 
-    chdb_local_result * run_chdb_query(char * query, char * format);
+    chdb_local_result * run_chdb_query(char * query, char * format, bool multiquery);
 
     void free_result(chdb_local_result * result);
 

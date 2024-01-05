@@ -1059,7 +1059,12 @@ chdb_local_result * make_error_result(char * msg) {
     return res;
 }
 
-chdb_local_result * LocalServer::run_chdb_query(char * query, char * query_format) {
+chdb_local_result * LocalServer::run_chdb_query(char * query, char * query_format, bool multiquery) {
+    if (multiquery != is_multiquery) {
+        is_multiquery = multiquery;
+        adjustSettings();
+    }
+
     std::string formatText(query_format);
     format = formatText;
 
@@ -1263,10 +1268,10 @@ void chdb_disconnect(ChdbLocalServerPtr obj) {
 }
 
 
-chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * format)
+chdb_local_result * chdb_query(ChdbLocalServerPtr obj, char * query, char * format, bool multiquery)
 {
     DB::LocalServer* app = static_cast<DB::LocalServer*>(obj);
-    return app->run_chdb_query(query, format);
+    return app->run_chdb_query(query, format, multiquery);
 }
 
 void chdb_set_named_collections(ChdbLocalServerPtr obj, char * named_collection_config_xml)
